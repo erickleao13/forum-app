@@ -5,101 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fórum App</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-        }
-        #app {
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .status-bar {
-            height: 20px;
-            background-color: #4a90e2;
-        }
-        h1, h2 {
-            text-align: center;
-            color: #333;
-        }
-        button {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #4a90e2;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .back-button {
-            background-color: #ccc;
-            color: #333;
-        }
-        input, textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        textarea {
-            height: 100px;
-            resize: vertical;
-        }
-        .topic-item {
-            background-color: white;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .topic-title {
-            margin: 0 0 5px 0;
-            font-size: 18px;
-            color: #333;
-        }
-        .topic-author {
-            margin: 0;
-            font-size: 14px;
-            color: #666;
-        }
+        /* ... (estilos permanecem os mesmos) ... */
     </style>
 </head>
 <body>
     <div class="status-bar"></div>
     <div id="app">
-        <div id="main-screen">
-            <h1>Fórum App</h1>
-            <button onclick="showScreen('topics')">Ver Tópicos</button>
-            <button onclick="showScreen('new-topic')">Novo Tópico</button>
-        </div>
-        <div id="topics-screen" style="display: none;">
-            <h2>Tópicos</h2>
-            <div id="topics-list"></div>
-            <button class="back-button" onclick="showScreen('main')">Voltar</button>
-        </div>
-        <div id="new-topic-screen" style="display: none;">
-            <h2>Novo Tópico</h2>
-            <input type="text" id="topic-title" placeholder="Título do tópico">
-            <textarea id="topic-content" placeholder="Conteúdo do tópico"></textarea>
-            <button onclick="createTopic()">Publicar</button>
-            <button class="back-button" onclick="showScreen('main')">Cancelar</button>
-        </div>
+        <!-- ... (estrutura HTML permanece a mesma) ... -->
     </div>
 
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <!-- Add Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
     <script>
-        let topics = [
-            { id: 1, title: "Introdução ao React", author: "Alice" },
-            { id: 2, title: "Dicas de JavaScript", author: "Bob" },
-            { id: 3, title: "Melhores práticas em CSS", author: "Charlie" }
-        ];
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCv3mnPI0wwYIFyGOazhL59U7qOH4BSjMg",
+            authDomain: "teste-5d170.firebaseapp.com",
+            databaseURL: "https://teste-5d170-default-rtdb.firebaseio.com",  // Adicione esta linha
+            projectId: "teste-5d170",
+            storageBucket: "teste-5d170.appspot.com",
+            messagingSenderId: "607632870147",
+            appId: "1:607632870147:web:f20542296ab44d3eaab736",
+            measurementId: "G-K3K7G42EF6"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Referência para o nó 'topics' no banco de dados
+        const topicsRef = firebase.database().ref('topics');
 
         function showScreen(screenId) {
             document.getElementById('main-screen').style.display = 'none';
@@ -115,14 +52,22 @@
         function renderTopics() {
             const topicsList = document.getElementById('topics-list');
             topicsList.innerHTML = '';
-            topics.forEach(topic => {
-                const topicElement = document.createElement('div');
-                topicElement.className = 'topic-item';
-                topicElement.innerHTML = `
-                    <h3 class="topic-title">${topic.title}</h3>
-                    <p class="topic-author">por ${topic.author}</p>
-                `;
-                topicsList.appendChild(topicElement);
+
+            topicsRef.on('value', (snapshot) => {
+                console.log('Dados recebidos:', snapshot.val());
+                topicsList.innerHTML = '';
+                snapshot.forEach((childSnapshot) => {
+                    const topic = childSnapshot.val();
+                    const topicElement = document.createElement('div');
+                    topicElement.className = 'topic-item';
+                    topicElement.innerHTML = `
+                        <h3 class="topic-title">${topic.title}</h3>
+                        <p class="topic-author">por ${topic.author}</p>
+                    `;
+                    topicsList.appendChild(topicElement);
+                });
+            }, (error) => {
+                console.error("Erro ao ler tópicos:", error);
             });
         }
 
@@ -131,15 +76,23 @@
             const content = document.getElementById('topic-content').value;
             if (title && content) {
                 const newTopic = {
-                    id: topics.length + 1,
                     title: title,
-                    author: "Usuário" // Em um app real, isso seria o nome do usuário logado
+                    content: content,
+                    author: "Usuário",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
                 };
-                topics.push(newTopic);
-                alert('Tópico criado com sucesso!');
-                document.getElementById('topic-title').value = '';
-                document.getElementById('topic-content').value = '';
-                showScreen('topics');
+                topicsRef.push(newTopic)
+                    .then(() => {
+                        console.log('Tópico criado com sucesso!');
+                        alert('Tópico criado com sucesso!');
+                        document.getElementById('topic-title').value = '';
+                        document.getElementById('topic-content').value = '';
+                        showScreen('topics');
+                    })
+                    .catch((error) => {
+                        console.error('Erro ao criar tópico:', error);
+                        alert('Erro ao criar tópico. Por favor, tente novamente.');
+                    });
             } else {
                 alert('Por favor, preencha todos os campos.');
             }
