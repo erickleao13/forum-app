@@ -5,22 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fórum App</title>
     <style>
-        /* ... (estilos permanecem os mesmos) ... */
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f0f0f0; }
+        #app { max-width: 400px; margin: 0 auto; padding: 20px; }
+        h1, h2 { text-align: center; color: #333; }
+        button { display: block; width: 100%; padding: 10px; margin-bottom: 10px; background-color: #4a90e2; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
+        textarea { height: 100px; resize: vertical; }
+        .topic-item { background-color: white; padding: 10px; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .topic-title { margin: 0 0 5px 0; font-size: 18px; color: #333; }
+        .topic-author { margin: 0; font-size: 14px; color: #666; }
+        #status { text-align: center; margin-bottom: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="status-bar"></div>
     <div id="app">
-        <!-- ... (estrutura HTML permanece a mesma) ... -->
+        <h1>Fórum App</h1>
+        <div id="status"></div>
+        <div id="main-screen">
+            <button onclick="showScreen('topics')">Ver Tópicos</button>
+            <button onclick="showScreen('new-topic')">Novo Tópico</button>
+        </div>
+        <div id="topics-screen" style="display: none;">
+            <h2>Tópicos</h2>
+            <div id="topics-list"></div>
+            <button onclick="showScreen('main')">Voltar</button>
+        </div>
+        <div id="new-topic-screen" style="display: none;">
+            <h2>Novo Tópico</h2>
+            <input type="text" id="topic-title" placeholder="Título do tópico">
+            <textarea id="topic-content" placeholder="Conteúdo do tópico"></textarea>
+            <button onclick="createTopic()">Publicar</button>
+            <button onclick="showScreen('main')">Cancelar</button>
+        </div>
     </div>
 
-    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <!-- Add Firebase products that you want to use -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
     <script>
-        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCv3mnPI0wwYIFyGOazhL59U7qOH4BSjMg",
             authDomain: "teste-5d170.firebaseapp.com",
@@ -32,30 +54,28 @@
             measurementId: "G-K3K7G42EF6"
         };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         console.log("Firebase inicializado");
 
-        // Referência para o nó 'topics' no banco de dados
         const topicsRef = firebase.database().ref('topics');
         console.log("Referência do banco de dados criada:", topicsRef.toString());
 
-        function showScreen(screenId) {
-            document.getElementById('main-screen').style.display = 'none';
-            document.getElementById('topics-screen').style.display = 'none';
-            document.getElementById('new-topic-screen').style.display = 'none';
-            document.getElementById(screenId + '-screen').style.display = 'block';
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+            console.log(message);
+        }
 
-            if (screenId === 'topics') {
-                renderTopics();
-            }
+        function showScreen(screenId) {
+            ['main-screen', 'topics-screen', 'new-topic-screen'].forEach(id => {
+                document.getElementById(id).style.display = id === screenId + '-screen' ? 'block' : 'none';
+            });
+            if (screenId === 'topics') renderTopics();
         }
 
         function renderTopics() {
+            updateStatus("Carregando tópicos...");
             const topicsList = document.getElementById('topics-list');
             topicsList.innerHTML = '';
-
-            console.log("Iniciando leitura de tópicos");
             topicsRef.on('value', (snapshot) => {
                 console.log('Dados recebidos:', snapshot.val());
                 topicsList.innerHTML = '';
@@ -69,8 +89,10 @@
                     `;
                     topicsList.appendChild(topicElement);
                 });
+                updateStatus("Tópicos carregados");
             }, (error) => {
                 console.error("Erro ao ler tópicos:", error);
+                updateStatus("Erro ao carregar tópicos");
             });
         }
 
@@ -78,6 +100,7 @@
             const title = document.getElementById('topic-title').value;
             const content = document.getElementById('topic-content').value;
             if (title && content) {
+                updateStatus("Criando novo tópico...");
                 const newTopic = {
                     title: title,
                     content: content,
@@ -88,29 +111,27 @@
                 topicsRef.push(newTopic)
                     .then(() => {
                         console.log('Tópico criado com sucesso!');
-                        alert('Tópico criado com sucesso!');
+                        updateStatus("Tópico criado com sucesso!");
                         document.getElementById('topic-title').value = '';
                         document.getElementById('topic-content').value = '';
                         showScreen('topics');
                     })
                     .catch((error) => {
                         console.error('Erro ao criar tópico:', error);
-                        alert('Erro ao criar tópico. Por favor, tente novamente.');
+                        updateStatus("Erro ao criar tópico");
                     });
             } else {
-                alert('Por favor, preencha todos os campos.');
+                updateStatus("Por favor, preencha todos os campos.");
             }
         }
 
-        // Inicializa a tela principal
         showScreen('main');
 
-        // Teste de conexão com o Firebase
         firebase.database().ref('.info/connected').on('value', function(snap) {
             if (snap.val() === true) {
-                console.log('Conectado ao Firebase');
+                updateStatus('Conectado ao Firebase');
             } else {
-                console.log('Não conectado ao Firebase');
+                updateStatus('Não conectado ao Firebase');
             }
         });
     </script>
