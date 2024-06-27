@@ -24,7 +24,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyCv3mnPI0wwYIFyGOazhL59U7qOH4BSjMg",
             authDomain: "teste-5d170.firebaseapp.com",
-            databaseURL: "https://teste-5d170-default-rtdb.firebaseio.com",  // Adicione esta linha
+            databaseURL: "https://teste-5d170-default-rtdb.firebaseio.com",
             projectId: "teste-5d170",
             storageBucket: "teste-5d170.appspot.com",
             messagingSenderId: "607632870147",
@@ -34,9 +34,11 @@
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
+        console.log("Firebase inicializado");
 
         // Referência para o nó 'topics' no banco de dados
         const topicsRef = firebase.database().ref('topics');
+        console.log("Referência do banco de dados criada:", topicsRef.toString());
 
         function showScreen(screenId) {
             document.getElementById('main-screen').style.display = 'none';
@@ -53,6 +55,7 @@
             const topicsList = document.getElementById('topics-list');
             topicsList.innerHTML = '';
 
+            console.log("Iniciando leitura de tópicos");
             topicsRef.on('value', (snapshot) => {
                 console.log('Dados recebidos:', snapshot.val());
                 topicsList.innerHTML = '';
@@ -79,8 +82,9 @@
                     title: title,
                     content: content,
                     author: "Usuário",
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                    timestamp: Date.now()
                 };
+                console.log("Tentando criar novo tópico:", newTopic);
                 topicsRef.push(newTopic)
                     .then(() => {
                         console.log('Tópico criado com sucesso!');
@@ -100,6 +104,15 @@
 
         // Inicializa a tela principal
         showScreen('main');
+
+        // Teste de conexão com o Firebase
+        firebase.database().ref('.info/connected').on('value', function(snap) {
+            if (snap.val() === true) {
+                console.log('Conectado ao Firebase');
+            } else {
+                console.log('Não conectado ao Firebase');
+            }
+        });
     </script>
 </body>
 </html>
